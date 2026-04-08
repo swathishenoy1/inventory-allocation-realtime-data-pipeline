@@ -4,8 +4,8 @@ This repo currently contains the lightweight MVP artifacts we produced so far: a
 
 ## What’s Included
 
-- Dashboard shell (HTML/CSS): `/Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline/inventory_dashboard.html`
-- Seed data + generator: `/Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline/seed_data`
+- Dashboard shell (HTML/CSS)
+- Seed data + generator
 
 ## Dashboard (HTML)
 
@@ -17,12 +17,6 @@ The file is a minimal, scannable dashboard layout for:
 - Allocation trend and lag distribution
 - Tabbed tables for stock-outs, backorders, and accuracy
 
-Open the file directly in a browser:
-
-```bash
-open /Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline/inventory_dashboard.html
-```
-
 ## Seed Data
 
 The seed set is designed to be Kafka-ready and deterministic.
@@ -33,16 +27,10 @@ Contents:
 - `generate_seed.py`: deterministic generator
 - `README.md`: schema and usage notes
 
-Quick peek:
-
-```bash
-head -n 3 /Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline/seed_data/events.jsonl
-```
-
 Regenerate the seed data:
 
 ```bash
-python3 /Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline/seed_data/generate_seed.py
+python3 generate_seed.py
 ```
 
 ## Notes
@@ -53,7 +41,7 @@ python3 /Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realt
 ## Project Tree
 
 ```text
-/Users/swathiravindra/Documents/swathi_coding/inventory-allocation-realtime-data-pipeline
+inventory-allocation-realtime-data-pipeline
 ├─ inventory_dashboard.html
 ├─ README.md
 └─ seed_data
