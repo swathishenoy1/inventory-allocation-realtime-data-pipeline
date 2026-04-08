@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inventory Availability & Allocation — MVP</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-2: #0b1220;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #f59e0b;
+        --accent-2: #22c55e;
+        --danger: #ef4444;
+        --line: #1f2937;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", Tahoma, sans-serif;
+        background: radial-gradient(1200px 600px at 20% -10%, #1f2937, transparent),
+                    radial-gradient(900px 500px at 100% 0%, #111827, transparent),
+                    var(--bg);
+        color: var(--text);
+      }
+
+      .wrap { max-width: 1200px; margin: 24px auto 48px; padding: 0 16px; }
+
+      header {
+        display: grid;
+        gap: 12px;
+        align-items: center;
+        grid-template-columns: 1fr;
+        margin-bottom: 18px;
+      }
+      header h1 { margin: 0; font-size: 22px; font-weight: 600; }
+      .sub { color: var(--muted); font-size: 12px; }
+
+      .controls {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .control {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .control label { display: block; font-size: 11px; color: var(--muted); }
+      .control .value { margin-top: 4px; color: var(--text); font-weight: 500; }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+      }
+
+      .card {
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        min-height: 120px;
+      }
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+      }
+      .kpi {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+      }
+      .kpi .value { font-size: 28px; font-weight: 700; }
+      .kpi .delta { font-size: 12px; color: var(--muted); }
+      .chip {
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: #111;
+        border: 1px solid var(--line);
+      }
+      .chip.good { color: var(--accent-2); border-color: #14532d; }
+      .chip.warn { color: var(--accent); border-color: #78350f; }
+      .chip.bad { color: var(--danger); border-color: #7f1d1d; }
+
+      .chart {
+        height: 160px;
+        border-radius: 8px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
+          repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 30px),
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 30px);
+        position: relative;
+        overflow: hidden;
+      }
+      .chart::after {
+        content: "Chart placeholder";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .bar {
+        height: 160px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
+          repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 28px);
+        border-radius: 8px;
+        position: relative;
+      }
+      .bar::after {
+        content: "Bar chart placeholder";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      .table th, .table td {
+        padding: 8px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+      }
+      .table th { color: var(--muted); font-weight: 600; }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .tab {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        background: #0b1220;
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .tab.active {
+        color: var(--text);
+        border-color: #1f2937;
+        background: #111827;
+      }
+
+      @media (max-width: 900px) {
+        .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 640px) {
+        .controls { grid-template-columns: 1fr; }
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Inventory Availability & Allocation — MVP</h1>
+          <div class="sub">Real-time overview (last 15 minutes)</div>
+        </div>
+        <div class="controls">
+          <div class="control">
+            <label>Time Window</label>
+            <div class="value">Last 15 minutes</div>
+          </div>
+          <div class="control">
+            <label>Fulfillment Center</label>
+            <div class="value">All</div>
+          </div>
+          <div class="control">
+            <label>Region</label>
+            <div class="value">All</div>
+          </div>
+          <div class="control">
+            <label>SKU Search</label>
+            <div class="value">—</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="card" style="grid-column: span 4;">
+          <h3>Allocation Success Rate</h3>
+          <div class="kpi">
+            <div class="value">96.4%</div>
+            <div class="chip good">On Track</div>
+          </div>
+          <div class="delta">Last 24h average: 95.9%</div>
+        </div>
+
+        <div class="card" style="grid-column: span 4;">
+          <h3>Negative Inventory Count</h3>
+          <div class="kpi">
+            <div class="value">18</div>
+            <div class="chip warn">Needs Review</div>
+          </div>
+          <div class="delta">Across 6 FCs</div>
+        </div>
+
+        <div class="card" style="grid-column: span 4;">
+          <h3>P95 Allocation Lag (min)</h3>
+          <div class="kpi">
+            <div class="value">7.8</div>
+            <div class="chip good">Stable</div>
+          </div>
+          <div class="delta">Target: &lt; 10 min</div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>Stock‑Outs by SKU (Top 20)</h3>
+          <div class="bar"></div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>Backorders by SKU (Top 20)</h3>
+          <div class="bar"></div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>Allocation Success Rate Trend</h3>
+          <div class="chart"></div>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>Allocation Lag Distribution</h3>
+          <div class="chart"></div>
+        </div>
+
+        <div class="card" style="grid-column: span 12;">
+          <h3>Detail Tables</h3>
+          <div class="tabs">
+            <div class="tab active">Stock‑Outs</div>
+            <div class="tab">Backorders</div>
+            <div class="tab">Inventory Accuracy</div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>sku_id</th>
+                <th>fc_id</th>
+                <th>count</th>
+                <th>last_ts</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SKU-18420</td>
+                <td>FC-03</td>
+                <td>12</td>
+                <td>10:42:12</td>
+              </tr>
+              <tr>
+                <td>SKU-55219</td>
+                <td>FC-01</td>
+                <td>9</td>
+                <td>10:41:03</td>
+              </tr>
+              <tr>
+                <td>SKU-00983</td>
+                <td>FC-02</td>
+                <td>7</td>
+                <td>10:39:55</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
