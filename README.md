@@ -1,3 +1,5 @@
+This project simulates a real-time inventory allocation system where inventory, order, allocation, backorder, and stock update events flow through a pipeline. The goal is to track whether products are available, whether customer orders are being allocated successfully, where stock-outs are happening, and how quickly inventory gets allocated after an order is created.
+
 # Inventory Allocation Realtime Data Pipeline — MVP Assets
 
 This repo currently contains the lightweight MVP artifacts we produced so far: a static dashboard mockup and deterministic seed data to drive the pipeline.
