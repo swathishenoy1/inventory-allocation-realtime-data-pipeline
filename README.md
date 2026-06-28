@@ -35,6 +35,85 @@ Regenerate the seed data:
 python3 generate_seed.py
 ```
 
+## Kafka Producer
+
+There is a simple JSONL-to-Kafka producer you can use to stream the seed events.
+
+Install dependency:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run (from repo root):
+
+```bash
+python3 scripts/produce_events.py \
+  --topic inventory_events \
+  --bootstrap-servers localhost:9092 \
+  --events-per-second 5
+```
+
+Optional flags:
+- `--loop` to continuously replay the file
+- `--max-events N` to send only N events
+- `--key-field sku_id` to key by SKU instead of order
+
+## Spark Aggregations
+
+The Spark job computes the dashboard-ready metric tables from the seed event stream.
+
+Run a local batch aggregation from `events.jsonl`:
+
+```bash
+python3 scripts/spark_aggregations.py \
+  --source jsonl \
+  --input seed_data/events.jsonl \
+  --output data/aggregates
+```
+
+Generated Parquet tables:
+- `data/aggregates/stock_outs`
+- `data/aggregates/backorders`
+- `data/aggregates/inventory_accuracy`
+- `data/aggregates/allocation_success_5m`
+- `data/aggregates/allocation_lag`
+
+The script also includes a Kafka streaming reader mode that writes raw partitioned Parquet for continuous ingestion:
+
+```bash
+python3 scripts/spark_aggregations.py \
+  --source kafka \
+  --topic inventory_events \
+  --bootstrap-servers localhost:9092 \
+  --output data/streaming
+```
+
+## Metrics API
+
+After generating the Spark aggregate tables, start the local JSON API:
+
+```bash
+python3 scripts/serve_metrics_api.py \
+  --aggregate-dir data/aggregates \
+  --port 8000
+```
+
+Available endpoints:
+- `GET /health`
+- `GET /api/tables`
+- `GET /api/stock-outs`
+- `GET /api/backorders`
+- `GET /api/inventory-accuracy`
+- `GET /api/allocation-success`
+- `GET /api/allocation-lag`
+
+Each metric endpoint supports an optional `limit` query parameter:
+
+```bash
+curl "http://127.0.0.1:8000/api/backorders?limit=20"
+```
+
 ## Notes
 
 - The dashboard is static HTML intended as a visual wireframe.
@@ -46,6 +125,11 @@ python3 generate_seed.py
 inventory-allocation-realtime-data-pipeline
 ├─ inventory_dashboard.html
 ├─ README.md
+├─ requirements.txt
+├─ scripts
+│  ├─ spark_aggregations.py
+│  ├─ serve_metrics_api.py
+│  └─ produce_events.py
 └─ seed_data
    ├─ events.jsonl
    ├─ generate_seed.py
@@ -55,6 +139,6 @@ inventory-allocation-realtime-data-pipeline
 
 ## Next Steps (Optional)
 
-1. Add a Kafka producer script to stream `events.jsonl` into a topic for live demo.
-2. Add a minimal Spark Structured Streaming job to compute the MVP aggregates.
-3. Write aggregated Parquet locally and point the dashboard to a small API or query layer.
+1. Wire the static dashboard to the metrics API.
+2. Add Docker Compose for Kafka + local Spark demo startup.
+3. Add a small smoke test for the aggregation and API scripts.
